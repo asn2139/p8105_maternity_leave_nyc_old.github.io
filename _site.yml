@@ -10,7 +10,7 @@ navbar:
     - text: "Spacial regression"
       href: ??
     - text: "Leave weeks by NYC borough"
-      href: https://meb2308.shinyapps.io/meb2308_shiny/
+      href: https://meb2308.shinyapps.io/shiny/
     - text: "Conclusions"
       href: conclusions.html
 
