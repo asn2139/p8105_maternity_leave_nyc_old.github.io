@@ -1,0 +1,10 @@
+---
+title: "Exploring Variables That Affect Maternity Leave"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+## Different Variable Plots

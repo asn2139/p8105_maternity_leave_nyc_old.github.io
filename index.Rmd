@@ -1,0 +1,19 @@
+---
+title: "Exploring Maternity Leave in NYC"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_float: true
+---
+
+
+
+
+![](images/title_pic.jpg)
+
+> "Maternity Leave and paternity leave is absolutely vital for stregthening families.
+> It's an issue for men and women. " - Quentin Bryce
+
+
+
