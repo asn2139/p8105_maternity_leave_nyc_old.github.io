@@ -17,10 +17,9 @@ o   “The New York City Work and Family Leave Survey (WFLS), conducted in March
 
 [Link for Dataset](https://data.cityofnewyork.us/Health/New-York-City-Work-and-Family-Leave-Survey-WFLS-20/grnn-mvqe)
 
-[Paid Family Leave Report](https://www1.nyc.gov/assets/doh/downloads/pdf/hca/paid-family-leave-report1.pdf)
 
 
 
-Summary of Findings {.tabset}
+What you'll find in this website {.tabset}
 -
 

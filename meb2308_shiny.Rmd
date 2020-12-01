@@ -1,0 +1,272 @@
+---
+title: "Maternity Leave in NYC"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    source_code: embed
+    runtime: shiny
+---
+
+```{r, include=FALSE}
+library(tidyverse)
+library(plotly)
+library(flexdashboard)
+library(shiny)
+library(rsconnect)
+library (tigris)
+library(rgdal)
+library(dplyr)
+library(leaflet)
+library(sp)
+
+#read in data frame for leave plots
+charts_df = 
+  read_csv("./data/merged_wfls.csv")
+
+#create data frame with sociodemographic NAs removed
+charts_df_2 = 
+    read_csv("./data/merged_wfls.csv") %>% 
+    drop_na(borough, race, job_type, leave_type, education, partner, family_income)
+
+#load NYC zipcodes shape file
+nyc_neighborhoods = 
+  readOGR('http://data.beta.nyc//dataset/0ff93d2d-90ba-457c-9f7e-39e47bf2ac5f/resource/35dd04fb-81b3-479b-a074-a27a37888ce7/download/d085e2f8d0b54d4590b1e7d1f35594c1pediacitiesnycneighborhoods.geojson', encoding = 'OGRFEOJSON', verbose = FALSE)
+
+#merge NYC shape file with WFLS data
+
+merge_map = merge(nyc_neighborhoods, charts_df, by = 'neighborhood', duplicateGeoms = TRUE)
+```
+
+By Neighborhood
+=====================================
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+#choose a geography options
+
+borough_choice = charts_df %>% 
+  pull(borough) %>% unique()
+
+selectInput(
+  "geography",
+  h3("Choose a geography"),
+  choices = list("All of NYC", "Result by borough"))
+
+conditionalPanel(
+  condition = "input.geography != 'All of NYC'",
+    selectInput(
+    "borough_choice",
+    h3("Choose a borough"),
+    choices = borough_choice))
+
+```
+
+Column 
+-----------------------------------------------------------------------
+
+```{r}
+renderText({
+  input[["borough_choice"]]
+})
+
+renderPlotly({
+  
+filtered_df <- 
+  charts_df %>% 
+  filter(
+    borough == input$borough_choice
+    ) %>% 
+  group_by(leave_type) %>% 
+  mutate(
+    leave_type = factor(leave_type, levels=c("Paid", "Unpaid", "Both")),
+    ) %>% 
+  plot_ly(
+    x = ~leave_type, y = ~leave_weeks, color = ~neighborhood,
+    type = "box", colors = "viridis") %>%
+  layout(
+    boxmode = "group",
+    title = "Weeks of Maternity Leave",
+    xaxis = list(title = "Type of Leave"),
+    yaxis = list(title = ""))
+
+ })
+
+```
+
+By Key Socio-Demographics
+=====================================
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+
+race = charts_df_2 %>% 
+  pull(race) %>% unique()
+
+partner = charts_df_2 %>% 
+  pull(partner) %>% unique()
+
+education = charts_df_2 %>% 
+  pull(education) %>% unique()
+
+employment = charts_df_2 %>% 
+  pull(job_type) %>% unique()
+
+family_income = charts_df_2 %>% 
+  pull(family_income) %>% unique()
+
+# Choose two options to plot in bar chart format
+
+selectInput(
+  "choice_1",
+  h3("Choose x-axis variable"),
+  choices = c("Race", "Employment Type", "Co-parenting Status", "Family Income"))
+
+selectInput(
+  "choice_2",
+  h3("Choose color group variable"),
+  choices = c("Race", "Employment Type", "Co-parenting Status", "Family Income"))
+
+```
+
+Column
+-----------------------------------------------------------------------
+
+```{r}
+renderPlotly({
+plots <-
+  charts_df %>%
+  group_by(input$choice_1, input$choice_2) %>% 
+  plot_ly(
+    x = ~input$choice_1, y = ~leave_weeks, color = ~input$choice_2,
+    type = "box", colors = "viridis") %>% 
+  layout(
+    title = paste("Weeks of Maternity Leave by", input$choice_1, "and", input$choice_2),
+    xaxis = list(title = "input$choice_1"),
+    yaxis = list(title = ""))
+})
+```
+
+NYC Maps
+===================================== 
+
+Column {.sidebar}
+-----------------------------------------------------------------------
+
+```{r}
+# Choose map options
+
+borough_choice = charts_df %>% 
+  pull(borough) %>% unique()
+  
+race = charts_df_2 %>% 
+  pull(race) %>% unique()
+
+partner = charts_df_2 %>% 
+  pull(partner) %>% unique()
+
+education = charts_df_2 %>% 
+  pull(education) %>% unique()
+
+employment = charts_df_2 %>% 
+  pull(job_type) %>% unique()
+
+family_income = charts_df_2 %>% 
+  pull(family_income) %>% unique()
+
+# Choose one option for map in addition to Borough
+
+selectInput(
+  "geography",
+  h3("Choose a geography"),
+  choices = list("All of NYC", "Result by borough"))
+
+conditionalPanel(
+  condition = "input.geography != 'All of NYC'",
+    selectInput(
+    "borough_choice",
+    h3("Choose a borough"),
+    choices = borough_choice))
+
+selectInput(
+  "choice_1",
+  h3("Choose x-axis variable"),
+  choices = list("Race", "Employment Type", "Co-parenting Status", "Family Income"))
+
+conditionalPanel(
+  condition = "input.choice_1 == 'Race'",
+  radioButtons(
+  "race",
+  h3("Race"),
+  choices = race))
+
+conditionalPanel(
+  condition = "input.choice_1 == 'Employment Type'",
+  radioButtons(
+  "employment",
+  h3("Employment Type"),
+  choices = employment))
+
+conditionalPanel(
+  condition = "input.choice_1 == 'Co-parenting Status'",
+  radioButtons(
+  "partner",
+  h3("Co-parenting Status"),
+  choices = partner))
+
+conditionalPanel(
+  condition = "input.choice_1 == 'Education'",
+  radioButtons(
+  "education",
+  h3("Education"),
+  choices = education))
+
+conditionalPanel(
+  condition = "input.choice_1 == 'Family Income'",
+  selectInput(
+  "family_income",
+  h3("Family Income"),
+  choices = family_income,
+  selected = "Less than $16,000"))
+
+
+# rsconnect::deployApp("./meb2308_shiny.Rmd")
+```
+
+Column
+----------------------------------------------------------------------
+
+```{r map}
+renderLeaflet({
+  
+merge_map = 
+  merge_map %>% 
+    filter(
+      borough == input$borough_choice)
+
+leave_bins = c(0, 1.5, 6.10, 11.15, 16.20, 21:25, 26:30, 31:40, 41:50)
+
+leave_palette = colorBin('Reds', bins = leave_bins, na.color = '#d9d9d9')
+
+leaflet::leaflet(data = merge_map) %>% 
+  addPolygons(
+    fill_color = ~leave_pallate(mean_leave_weeks),
+    fillOpacity = 0.8, 
+    color = "BDBDC3",
+    highlightOptions = highlightOptions(color = "black", weight = 2, bringToFront = TRUE)) %>% 
+  addProviderTiles("CartoDB.Positron") %>% 
+  addLegend('bottomleft', 
+            pal = leave_palette,
+            values = ~mean_leave_weeks,
+            title = 'Mean weeks of Maternity leave by neighborhood',
+            opacity = 1)
+            
+})
+```
+
+
+

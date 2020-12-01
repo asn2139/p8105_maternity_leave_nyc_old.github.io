@@ -1,0 +1,10 @@
+name: meb2308_shiny
+title:
+username:
+account: meb2308
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3316834
+bundleId: 3917734
+url: https://meb2308.shinyapps.io/meb2308_shiny/
+when: 1606618665.11661

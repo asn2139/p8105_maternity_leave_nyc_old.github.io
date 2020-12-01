@@ -5,14 +5,18 @@ navbar:
   left:
     - text: "About"
       href: about.html
-    - text: "Leaflet"
-      href: leaflet.html
+    - text: "Exploratory Analyses"
+      href: variables_mat_leave.html
+    - text: "Spacial regression"
+      href: ??
+    - text: "Leave weeks by NYC borough"
+      href: https://meb2308.shinyapps.io/meb2308_shiny/
+    - text: "Conclusions"
+      href: conclusions.html
 
   right:    
     - text: "Report"
-      href: variables_mat_leave.html
-    - text: "Conclusions"
-      href: conclusions.html
+      href: project_report.Rmd
     - icon: fa-youtube fa-lg
       href: https://www.youtube.com/watch?v=ahPeclU9VW0
     - icon: fa-github fa-lg
