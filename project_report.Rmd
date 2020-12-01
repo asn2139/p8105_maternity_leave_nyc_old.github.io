@@ -1,0 +1,452 @@
+---
+title: "Project Report Draft"
+output: 
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+    code_folding: hide
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include = FALSE}
+library(tidyverse)
+library(readxl)
+library(plotly)
+library(janitor)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%", 
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+<style type="text/css">
+
+h1.title {
+  text-align: center;
+}
+
+</style>
+
+## Motivation
+
+
+## Questions
+
+1. How does length of maternity leave taken by women in New York City vary according to key socioeconomic characteristics?
+
+2. How does length of maternity leave differ by zip code? Do these spacial patterns match the distribution of key socioeconomic characteristics?
+
+3. Is the geographic distribution of average length of maternity leave associated with X, Y, X?
+
+## Data 
+
+### **Data Sources**
+
+Our primary data source is the [NYC Work and Family Leave Survey (WFLS)](https://data.cityofnewyork.us/Health/New-York-City-Work-and-Family-Leave-Survey-WFLS-20/grnn-mvqe).
+
+The NYC WFLS is a telephone survey conducted in March 2016, which was administered to 1,000 New York City residents who gave birth in 2014. The goal was to understand the availability and accessibility of paid family leave to working parents. The WLFS also sought to describe the role that paid family leave policies play in achieving health equity for parents and children.
+
+NYC zipcodes by neighborhood and borough came from the [New York State Department of Health Zipcode Definitions Page](https://www.health.ny.gov/statistics/cancer/registry/appendix/neighborhoods.htm).
+
+### **Variables of interest***
+
+**Outcomes**
+
+ * `leave_weeks` = weeks of maternity leave (paid or unpaid)
+ * `paid_leave_weeks` = weeks of paid maternity leave 
+ * `unpaid_leave_weeks` = weeks of unpaid maternity leave
+ * `postpartum_check` = had a postpartum checkup 4-6 weeks after giving birth
+ 
+**Predictors**
+
+ * `neighborhood` = neighborhood (based on five digit zip code)
+ * `race` = race of survey respondent
+ * `family_income` = family income as percent of the federal poverty level
+ * `food_insecurity` = concern about having enough food to feed family or receives public assistance in the form of SNAP benefits / food stamps
+ * `education` = highest grade or year of school completed
+ * `partner` = co-parenting status (single or co-parent)
+ * `employment_type` = type of employment during pregnancy (government, private company, non-profit, self-employed)
+
+### **Data Cleaning**
+
+Read in data, create new variables, and select key variables for analysis
+
+
+```{r}
+wfls_df = 
+  read_csv("./data/WFLS_2014.csv") %>% 
+  mutate(
+    recode_el12mns = el12mns*4,
+    el11 = as.character(el11),
+    leave_type = case_when(
+      el11 == '1' ~ "Paid",
+      el11 == '2' ~ "Unpaid",
+      el11 == '3' ~ "Both",
+      el11 == '4' ~ "Did not take time off"),
+    leave_weeks = coalesce(recode_el12mns, el12wks),
+    leave_weeks = na_if(leave_weeks, 77),
+    leave_weeks = na_if(leave_weeks, 99),
+    ulw_recode = case_when(
+      leave_type == "Unpaid" ~ leave_weeks),
+    unpaid_leave_weeks = coalesce(ulw_recode, el13d),
+    pct_unpaid = round((unpaid_leave_weeks/leave_weeks)*100),
+    partner = case_when(
+      cp1 == '1' ~ "Co-parent",
+      cp1 == '2' ~ "Single Parent"),
+    education = case_when(
+      d7 == '1' ~ "No high school degree",
+      d7 == '2' ~ "No high school degree",
+      d7 == '3' ~ "No high school degree",
+      d7 == '4' ~ "High school degree/GED",
+      d7 == '5' ~ "Some college or technical school",
+      d7 == '6' ~ "Four year college or higher"),
+    d4_2 = na_if(d4_2, 77),
+    d4_2 = na_if(d4_2, 99),
+    race = case_when(
+      d4_1 == '1' ~ "White",
+      d4_1 == '2' ~ "Black/African American",
+      d4_1 == '3' ~ "Asian",
+      d4_1 == '4' ~ "Native Hawaiian/OPI",
+      d4_1 == '5' ~ "American Indian/AN",
+      d4_1 == '8' ~ "Other",
+      d3 == 1 ~ "Hispanic",
+      d4_2 >= 1 ~ "Multiple"),
+    job_type = case_when(
+      el3 == '1' ~ "Government",
+      el3 == '2' ~ "Private",
+      el3 == '3' ~ "Non-profit",
+      el3 == '4' ~ "Self-employed"), 
+    unemploy_reason = el16, 
+    unemploy_reason = case_when( 
+      el16 == '1' ~ "Fired related to pregnancy or maternity leave", 
+      el16 == '2' ~ "Chose to stay-at-home", 
+      el16 == '3' ~ "Not enough flexibility", 
+      el16 == '4' ~ "No affordable childcare", 
+      el16 == '5' ~ "My health issues", 
+      el16 == '6' ~ "Baby's health issues", 
+      el16 == '7' ~ "Currently a student", 
+      el16 == '8' ~ "Can't find work", 
+      el16 == '9' ~ "Looking for other jobs", 
+      el16 == '10' ~ "other") ,
+    bf1_1 = case_when(
+      bf1_1 == '1' ~ "Never", 
+      bf1_1 == '2' ~ "Less than 1 Week", 
+      bf1_1 == '3' ~ "Weeks", 
+      bf1_1 == '4' ~ "Months", 
+      bf1_1 == '5' ~ "Still breastfeeding", 
+      bf1_1 == '77' ~ "don't know", 
+      bf1_1 == '99' ~ "refused"), 
+<<<<<<< HEAD
+=======
+    food_insecurity = case_when(
+      es2 == 1 ~ 1,
+      es1a == 1 ~ 1,
+      es1a == 2 ~ 1,
+      es1a == 3 ~ 1,
+      es2 == 0 ~ 0,
+      es1a == 4 ~ 0
+    ),
+    family_income = case_when(
+      es3 == '1' ~ "Less than $16,000",
+      es3 == '2' ~ "$16,001 to $20,000",
+      es3 == '3' ~ "$20,001 to 40,000",
+      es3 == '4' ~ "$20,001 to 40,000",
+      es3 == '5' ~ "$20,001 to 40,000",
+      es3 == '6' ~ "$20,001 to 40,000",
+      es3 == '7' ~ "$40,001 to 60,000",
+      es3 == '8' ~ "$40,001 to 60,000",
+      es3 == '9' ~ "$40,001 to 60,000",
+      es3 == '10' ~ "$60,001 to 85,000",
+      es3 == '11' ~ "$60,001 to 85,000",
+      es3 == '12' ~ "More than $85,000"
+    ),
+<<<<<<< HEAD
+>>>>>>> 1de40c58f471087ae23d12234bc3df92b6dc5842
+    zipcode = fixd2) %>% 
+  select("ph1":"el1", "el9", "el11", "el13a":"el17f", "ih1", "mh4", "es1a": "es3", "SAMP_WEIGHT", "POP_WEIGHT", "leave_type":"pct_unpaid", "partner":"zipcode", "d4_2", "unemploy_reason", "bf1_1", "d7", "d4_1", "cp1", "el3")
+
+wfls_df %>% 
+  mutate(
+    race_num = race
+  )
+=======
+      postpartum_check = case_when(
+      pph1 == '1' ~ "yes", 
+      pph1 == '2' ~ "no"), 
+    mean_leave_weeks = mean(leave_weeks),
+    zipcode = fixd2) %>% 
+<<<<<<< HEAD
+<<<<<<< HEAD
+  select("ph1":"el1", "el9", "el11", "el13a":"el17f", "ih1", "mh4", "es1a": "es3", "SAMP_WEIGHT", "POP_WEIGHT", "leave_type":"pct_unpaid", "partner":"zipcode", "postpartum_check")
+>>>>>>> a60ebee7de012fb6be432d484c504afe791c4e18
+=======
+  select("ph1":"el1", "el9", "el11", "el13a":"el17f", "ih1", "mh4", "es1a":"es3", "SAMP_WEIGHT", "POP_WEIGHT", "leave_type":"pct_unpaid", "partner":"zipcode", "postpartum_check")
+>>>>>>> b9d51c788c1088b20341275db7eb2966c9c8b91a
+=======
+  select("es3", "SAMP_WEIGHT", "POP_WEIGHT", "leave_type":"zipcode")
+>>>>>>> 432ce1668a71955c371d0347a8d0ec13793d47e9
+```
+
+Save cleaned data set and merge with NYC zipcodes data
+
+```{r}
+write.csv(wfls_df, "./data/cleaned_wfls.csv")
+<<<<<<< HEAD
+```
+
+<<<<<<< HEAD
+=======
+Merge data sets
+=======
+>>>>>>> 432ce1668a71955c371d0347a8d0ec13793d47e9
+
+cleaned_wfls = 
+  read_csv("./data/cleaned_wfls.csv")
+
+zipcodes =
+  read_xlsx("./data/zip_codes.xlsx") %>% 
+  mutate(zipcode = as.character(zipcode))
+
+merged_wfls = 
+  left_join(cleaned_wfls, zipcodes, by = "zipcode")
+
+write.csv(merged_wfls, "./data/merged_wfls.csv")
+```
+>>>>>>> 1de40c58f471087ae23d12234bc3df92b6dc5842
+
+## Exploratory Anlaysis  
+
+### **Leave and Race**
+
+
+```{r}
+<<<<<<< HEAD
+<<<<<<< HEAD
+wfls_df %>% 
+=======
+race = 
+=======
+leave = 
+>>>>>>> b9d51c788c1088b20341275db7eb2966c9c8b91a
+  merged_wfls %>% 
+  drop_na(race) %>% 
+  drop_na(leave_weeks) %>% 
+ mutate(race = fct_reorder(race, leave_weeks)) %>% 
+  ggplot(aes(x = race, y = leave_weeks, fill = race, alpha = 0.9)) + 
+    geom_boxplot() + 
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust = 1), legend.position = "none") +
+  labs(
+    title = "Weeks of maternity leave by race",
+    x = "Race",
+    y = "Weeks of leave"
+  )
+
+ggplotly(leave)
+```
+
+
+```{r}
+unpaid = 
+  merged_wfls %>% 
+>>>>>>> a60ebee7de012fb6be432d484c504afe791c4e18
+  drop_na(race) %>% 
+  drop_na(unpaid_leave_weeks) %>% 
+  drop_na(leave_weeks) %>% 
+ mutate(race = fct_reorder(race, leave_weeks)) %>% 
+  ggplot(aes(x = race, y = unpaid_leave_weeks, fill = race, alpha = 0.9)) + 
+    geom_boxplot() + 
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust = 1), legend.position = "none") +
+  ylim(0, 50) + 
+  labs(
+    title = "Unpaid maternity leave by race",
+    x = "Race",
+    y = "Unpaid Weeks of leave"
+  )
+
+ggplotly(unpaid)
+```
+
+
+The visualizations illustrate that weeks of leave do not substantially differ by race. For paid and unpaid leave, mothers who identify as American Indian/AN take slightly more weeks of leave. Mothers who identify as American Indian/AN also have higher spread of length of leave. 
+
+
+
+### **Leave and Parenting Status**
+```{r}
+parent = 
+  merged_wfls %>% 
+  drop_na(partner) %>% 
+  drop_na(leave_weeks) %>%
+ ggplot(aes(x = partner, y = leave_weeks, fill = partner, alpha = 0.9)) +
+  geom_boxplot() +
+  labs(
+    title = "Weeks of maternity leave by co-parenting status",
+    x = "Co-parenting status",
+    y = "Weeks of leave"
+  )
+ggplotly(parent)
+```
+
+This visualization shows that there is not a substantial difference of length of leave between mothers who are co-parents and single parents. 
+
+
+### **Leave and Income**
+
+```{r}
+unpaid = 
+merged_wfls %>% 
+drop_na(family_income) %>% 
+drop_na(unpaid_leave_weeks) %>% 
+mutate(food_insecurity = as.character(food_insecurity), 
+       food_insecurity = case_when(
+         food_insecurity == '0' ~ "no", 
+         food_insecurity == '1' ~ "yes"), 
+       family_income = fct_reorder(family_income, es3)) %>% 
+   ggplot(aes(x = family_income, y = unpaid_leave_weeks, color = food_insecurity)) +
+  geom_point() + 
+theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust = 1)) +
+  ylim(0, 80) + 
+  labs(
+    title = "Unpaid maternity leave by income",
+    x = "Family income",
+    y = "Weeks of unpaid leave", 
+    color = "Food insecurity"
+  )
+
+ggplotly(unpaid)
+
+```
+
+This plot shows that mothers who are food insecure are clustered towards the lower side of family income. Mothers who are food insecure tend to have a family income less than 40,000. Mothers whose family income is between 16,001 and 20,000 tend to have the shortest amount of unpaid leave. 
+
+
+<<<<<<< HEAD
+ggplotly(income)
+```
+<<<<<<< HEAD
+^ need to transform salary from 1-11 into actual numbers? Dont include this. 
+=======
+>>>>>>> a60ebee7de012fb6be432d484c504afe791c4e18
+
+
+4) Factors Affecting Return to work 
+=======
+### **Returning to Work**
+>>>>>>> b9d51c788c1088b20341275db7eb2966c9c8b91a
+```{r}
+unemploy = 
+merged_wfls %>% 
+  drop_na(unemploy_reason) %>% 
+  ggplot(aes(y = unemploy_reason, fill = race)) + geom_bar(position = "dodge") + 
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust = 1)) + 
+  labs(
+    title = "Reasons for Unemployment",
+    x = "Count",
+    y = "Reason") 
+
+ggplotly(unemploy)
+```
+
+
+```{r}
+unemploy2 = 
+merged_wfls %>% 
+  drop_na(unemploy_reason) %>% 
+  ggplot(aes(y = unemploy_reason, fill = education)) + geom_bar(position = "dodge") + 
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust = 1)) + 
+  labs(
+    title = "Reasons for Unemployment",
+    x = "Count",
+    y = "Reason") 
+
+ggplotly(unemploy2)
+```
+
+
+These visualizations shed light on the reason mothers were not back at work at the time of the survey. Choosing to stay at home was the most common response. However, it was disproportionately cited by mothers who were white and mothers who had a 5 year education or higher. 
+
+
+
+### **Post Partum Check Up Status**
+```{r}
+
+check = 
+merged_wfls %>% 
+  drop_na(family_income) %>% 
+  drop_na(postpartum_check) %>% 
+  mutate(
+    family_income = fct_reorder(family_income, es3)) %>% 
+  ggplot(aes(x = postpartum_check, fill = family_income)) + geom_bar(position = "dodge") + 
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust = 1)) + 
+  labs(
+    title = "Postpartum Check",
+    x = "Postpartum Check status",
+    y = "Count") 
+
+ggplotly(check)
+
+
+```
+
+```{r}
+check = 
+merged_wfls %>% 
+  drop_na(family_income) %>% 
+  drop_na(postpartum_check) %>% 
+  mutate( 
+     family_income = fct_reorder(family_income, es3)) %>% 
+  ggplot(aes(x = family_income, fill = postpartum_check)) + geom_bar(position = "stack") + 
+  theme(axis.text.x = element_text(angle = 60, vjust = 0.5, hjust = 1)) + 
+  labs(
+    title = "Postpartum Checkup Status by Income",
+    x = "Family Income",
+    y = "Count", 
+    fill = "Checkup Status") 
+
+ggplotly(check)
+```
+
+note: made proportion but looked like last hw and wasn't exciting b/c all well over .9
+
+Across all income categories, over 90% of mothers received a postpartum check up 4-6 weeks after giving birth. Mothers with a lower family income were more likely to not get a postpartum check up. 
+
+
+
+### **Unpaid Leave and Job Type**
+```{r}
+job_type = 
+  merged_wfls %>%  
+  drop_na(job_type) %>% 
+  drop_na(unpaid_leave_weeks) %>% 
+  ggplot(aes(x = job_type, y = unpaid_leave_weeks, fill = job_type, alpha = 0.9)) + 
+  geom_boxplot() + 
+  ylim(0, 50) + 
+  labs(
+    title = "Unpaid Leave Weeks by Job Type",
+    x = "Job type",
+    y = "Unpaid Leave Weeks") + 
+  theme(legend.position = "none")
+
+ggplotly(job_type)
+```
+
+This visualization shows that mothers who were self-employed were slightly more likely to have longer unpaid leave weeks. However, these values did not value substantially across groups. 
+
+
+## NYC Health Report and Related Work
