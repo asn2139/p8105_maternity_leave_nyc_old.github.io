@@ -152,8 +152,6 @@ wfls_df =
       bf1_1 == '5' ~ "Still breastfeeding", 
       bf1_1 == '77' ~ "don't know", 
       bf1_1 == '99' ~ "refused"), 
-<<<<<<< HEAD
-=======
     food_insecurity = case_when(
       es2 == 1 ~ 1,
       es1a == 1 ~ 1,
@@ -176,45 +174,20 @@ wfls_df =
       es3 == '11' ~ "$60,001 to 85,000",
       es3 == '12' ~ "More than $85,000"
     ),
-<<<<<<< HEAD
->>>>>>> 1de40c58f471087ae23d12234bc3df92b6dc5842
-    zipcode = fixd2) %>% 
-  select("ph1":"el1", "el9", "el11", "el13a":"el17f", "ih1", "mh4", "es1a": "es3", "SAMP_WEIGHT", "POP_WEIGHT", "leave_type":"pct_unpaid", "partner":"zipcode", "d4_2", "unemploy_reason", "bf1_1", "d7", "d4_1", "cp1", "el3")
-
-wfls_df %>% 
-  mutate(
-    race_num = race
-  )
-=======
+    race_num = race,
       postpartum_check = case_when(
       pph1 == '1' ~ "yes", 
-      pph1 == '2' ~ "no"), 
+      pph1 == '2' ~ "no"
+      ), 
     mean_leave_weeks = mean(leave_weeks),
     zipcode = fixd2) %>% 
-<<<<<<< HEAD
-<<<<<<< HEAD
-  select("ph1":"el1", "el9", "el11", "el13a":"el17f", "ih1", "mh4", "es1a": "es3", "SAMP_WEIGHT", "POP_WEIGHT", "leave_type":"pct_unpaid", "partner":"zipcode", "postpartum_check")
->>>>>>> a60ebee7de012fb6be432d484c504afe791c4e18
-=======
-  select("ph1":"el1", "el9", "el11", "el13a":"el17f", "ih1", "mh4", "es1a":"es3", "SAMP_WEIGHT", "POP_WEIGHT", "leave_type":"pct_unpaid", "partner":"zipcode", "postpartum_check")
->>>>>>> b9d51c788c1088b20341275db7eb2966c9c8b91a
-=======
-  select("es3", "SAMP_WEIGHT", "POP_WEIGHT", "leave_type":"zipcode")
->>>>>>> 432ce1668a71955c371d0347a8d0ec13793d47e9
+  select("es3", "leave_type":"zipcode")
 ```
 
 Save cleaned data set and merge with NYC zipcodes data
 
 ```{r}
 write.csv(wfls_df, "./data/cleaned_wfls.csv")
-<<<<<<< HEAD
-```
-
-<<<<<<< HEAD
-=======
-Merge data sets
-=======
->>>>>>> 432ce1668a71955c371d0347a8d0ec13793d47e9
 
 cleaned_wfls = 
   read_csv("./data/cleaned_wfls.csv")
@@ -228,7 +201,6 @@ merged_wfls =
 
 write.csv(merged_wfls, "./data/merged_wfls.csv")
 ```
->>>>>>> 1de40c58f471087ae23d12234bc3df92b6dc5842
 
 ## Exploratory Anlaysis  
 
@@ -236,14 +208,8 @@ write.csv(merged_wfls, "./data/merged_wfls.csv")
 
 
 ```{r}
-<<<<<<< HEAD
-<<<<<<< HEAD
 wfls_df %>% 
-=======
 race = 
-=======
-leave = 
->>>>>>> b9d51c788c1088b20341275db7eb2966c9c8b91a
   merged_wfls %>% 
   drop_na(race) %>% 
   drop_na(leave_weeks) %>% 
@@ -264,7 +230,6 @@ ggplotly(leave)
 ```{r}
 unpaid = 
   merged_wfls %>% 
->>>>>>> a60ebee7de012fb6be432d484c504afe791c4e18
   drop_na(race) %>% 
   drop_na(unpaid_leave_weeks) %>% 
   drop_na(leave_weeks) %>% 
@@ -284,7 +249,6 @@ ggplotly(unpaid)
 
 
 The visualizations illustrate that weeks of leave do not substantially differ by race. For paid and unpaid leave, mothers who identify as American Indian/AN take slightly more weeks of leave. Mothers who identify as American Indian/AN also have higher spread of length of leave. 
-
 
 
 ### **Leave and Parenting Status**
@@ -335,20 +299,8 @@ ggplotly(unpaid)
 
 This plot shows that mothers who are food insecure are clustered towards the lower side of family income. Mothers who are food insecure tend to have a family income less than 40,000. Mothers whose family income is between 16,001 and 20,000 tend to have the shortest amount of unpaid leave. 
 
-
-<<<<<<< HEAD
-ggplotly(income)
-```
-<<<<<<< HEAD
-^ need to transform salary from 1-11 into actual numbers? Dont include this. 
-=======
->>>>>>> a60ebee7de012fb6be432d484c504afe791c4e18
-
-
-4) Factors Affecting Return to work 
-=======
 ### **Returning to Work**
->>>>>>> b9d51c788c1088b20341275db7eb2966c9c8b91a
+
 ```{r}
 unemploy = 
 merged_wfls %>% 
