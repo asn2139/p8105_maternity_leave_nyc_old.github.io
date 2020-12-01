@@ -7,8 +7,37 @@ output:
     toc_float: true
 ---
 
+```{r}
+library(tidyverse)
+library(readxl)
+library(plotly)
+library(janitor)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%", 
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+
+
+```
+
 We explored the relationship between the following five variables and weeks of paid and unpaid maternity leave. 
 
+Change wfls to read csv
 
 ## **Maternity Leave and Race**
 
